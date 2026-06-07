@@ -10,7 +10,6 @@ export default async function handler(req, res) {
 
   const { messages, system } = req.body;
 
-  // Convertir l'historique au format Gemini
   const contents = messages.map(m => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }]
@@ -19,15 +18,12 @@ export default async function handler(req, res) {
   const body = {
     system_instruction: { parts: [{ text: system }] },
     contents,
-    generationConfig: {
-      maxOutputTokens: 1000,
-      temperature: 0.8,
-    }
+    generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
   };
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,9 +31,7 @@ export default async function handler(req, res) {
       }
     );
     const data = await response.json();
-
     if (data.error) return res.status(400).json({ error: data.error.message });
-
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Pas de réponse.";
     return res.status(200).json({ text });
   } catch (err) {
