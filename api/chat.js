@@ -10,16 +10,21 @@ export default async function handler(req, res) {
 
   const { messages, system } = req.body;
 
-  const contents = messages.map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }]
-  }));
-
-  const body = {
-    system_instruction: { parts: [{ text: system }] },
-    contents,
-    generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
-  };
+  // Injecter le system prompt dans le premier message
+  const contents = [
+    {
+      role: "user",
+      parts: [{ text: system + "\n\nUtilisateur : " + messages[0].content }]
+    },
+    {
+      role: "model",
+      parts: [{ text: "Compris. Je suis PROSPER, prêt à t'aider." }]
+    },
+    ...messages.slice(1).map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }]
+    }))
+  ];
 
   try {
     const response = await fetch(
@@ -27,7 +32,10 @@ export default async function handler(req, res) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          contents,
+          generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
+        }),
       }
     );
     const data = await response.json();
